@@ -228,3 +228,4 @@ Add to `claude_desktop_config.json`:
 ## 📄 License
 
 MIT License — see [LICENSE](LICENSE)
+=======
