@@ -1,0 +1,47 @@
+# NeoArchAI - Agentic House Architecture Design System
+# Core Web Framework
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9
+aiofiles>=23.2.1
+sse-starlette>=1.8.0
+
+# LangGraph & LangChain (Orchestration)
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-groq>=0.2.0
+langchain-community>=0.3.0
+# Optional LLM providers (install whichever you use):
+# langchain-google-genai>=2.0.0  # Gemini
+# langchain-openai>=0.2.0        # OpenAI / Together AI / OpenAI-compat
+# langchain-cohere>=0.3.0        # Cohere
+# langchain-ollama>=0.2.0        # Ollama (local)
+
+# CrewAI (Multi-Agent Framework)
+crewai>=0.80.0
+
+# FastMCP (Model Context Protocol)
+fastmcp>=2.0.0
+
+# 2D Rendering
+matplotlib>=3.8.0
+numpy>=1.26.0
+svgwrite>=1.4.3
+Pillow>=10.0.0
+shapely>=2.0.0
+
+# 3D Visualization
+plotly>=5.20.0
+scipy>=1.12.0
+
+# Report Generation
+fpdf2>=2.7.0
+jinja2>=3.1.0
+
+# Data & Utilities
+pydantic>=2.7.0
+pydantic-settings>=2.4.0
+python-dotenv>=1.0.0
+httpx>=0.27.0
+python-dateutil>=2.9.0

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeoArchAI – House Architecture Design</title>
+  <style>
+    /* ── Reset & base ──────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --border:    #30363d;
+      --accent:    #58a6ff;
+      --accent2:   #3fb950;
+      --accent3:   #f78166;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --radius:    12px;
+      --shadow:    0 8px 32px rgba(0,0,0,.4);
+    }
+    html { font-size: 15px; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Scrollbar ─────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Header ────────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #0d1117 0%, #1c2942 50%, #0d1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .logo { font-size: 2rem; }
+    header h1 {
+      font-size: 1.6rem; font-weight: 700;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    header p { font-size: .85rem; color: var(--muted); margin-top: .2rem; }
+
+    /* ── Layout ────────────────────────────────────────────── */
+    .container { max-width: 1280px; margin: 0 auto; padding: 2rem; }
+    .grid { display: grid; grid-template-columns: 380px 1fr; gap: 2rem; align-items: start; }
+    @media(max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+    /* ── Card ──────────────────────────────────────────────── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow);
+    }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1.2rem; color: var(--accent); }
+
+    /* ── Form ──────────────────────────────────────────────── */
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: .3rem; }
+    input, select, textarea {
+      width: 100%; padding: .5rem .75rem; border-radius: 6px;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); font-size: .9rem; outline: none; transition: border .2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 60px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+    .checkbox-row {
+      display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: .3rem;
+    }
+    .checkbox-row label {
+      display: flex; align-items: center; gap: .4rem;
+      font-size: .88rem; color: var(--text); cursor: pointer;
+    }
+    .checkbox-row input[type=checkbox] { width: auto; }
+
+    /* ── Button ────────────────────────────────────────────── */
+    .btn {
+      width: 100%; padding: .75rem 1.5rem; border: none; border-radius: 8px;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+      transition: transform .1s, box-shadow .2s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, #1f6feb, #388bfd);
+      color: #fff; box-shadow: 0 4px 15px rgba(56,139,253,.3);
+    }
+    .btn-primary:hover { box-shadow: 0 6px 20px rgba(56,139,253,.5); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-secondary {
+      background: var(--bg); color: var(--accent);
+      border: 1px solid var(--accent); margin-top: .5rem;
+    }
+
+    /* ── Progress ──────────────────────────────────────────── */
+    #progress-section { display: none; }
+    .stage-list {
+      display: flex; flex-direction: column; gap: .6rem; margin: 1rem 0;
+    }
+    .stage {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .5rem .75rem; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      transition: all .3s;
+    }
+    .stage.active { border-color: var(--accent); background: rgba(88,166,255,.05); }
+    .stage.done   { border-color: var(--accent2); }
+    .stage.error  { border-color: var(--accent3); }
+    .stage-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+    .stage-name { font-size: .85rem; flex: 1; }
+    .stage-badge {
+      font-size: .72rem; padding: .15rem .5rem; border-radius: 12px;
+      background: var(--border); color: var(--muted);
+    }
+    .stage.active .stage-badge { background: rgba(88,166,255,.2); color: var(--accent); }
+    .stage.done   .stage-badge { background: rgba(63,185,80,.2);  color: var(--accent2); }
+
+    .progress-bar-wrap {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 999px; height: 8px; overflow: hidden; margin: .5rem 0;
+    }
+    .progress-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width .6s ease; border-radius: 999px;
+    }
+    .progress-pct { text-align: right; font-size: .82rem; color: var(--muted); }
+
+    /* ── Results Tabs ──────────────────────────────────────── */
+    #results-section { display: none; }
+    .tabs { display: flex; gap: .5rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+    .tab-btn {
+      padding: .5rem 1.2rem; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--muted); cursor: pointer;
+      font-size: .85rem; transition: all .2s;
+    }
+    .tab-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(88,166,255,.08); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Basic design summary ──────────────────────────────── */
+    .summary-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem; text-align: center;
+    }
+    .stat-card .val { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+    .stat-card .lbl { font-size: .78rem; color: var(--muted); margin-top: .2rem; }
+
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    th, td { padding: .5rem .75rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 500; }
+    tr:last-child td { border-bottom: none; }
+
+    /* ── Floor plan gallery ────────────────────────────────── */
+    .floor-gallery { display: flex; flex-direction: column; gap: 1.5rem; }
+    .floor-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .floor-card-header {
+      padding: .75rem 1rem; font-size: .9rem; font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .floor-card img { width: 100%; display: block; }
+    .floor-card-actions { display: flex; gap: .5rem; }
+    .floor-card-actions a {
+      font-size: .78rem; padding: .25rem .75rem; border-radius: 5px;
+      border: 1px solid var(--border); color: var(--accent); text-decoration: none;
+    }
+    .floor-card-actions a:hover { background: rgba(88,166,255,.1); }
+
+    /* ── 3D model ──────────────────────────────────────────── */
+    #model-frame {
+      width: 100%; border: 1px solid var(--border); border-radius: 10px;
+      background: #000;
+    }
+
+    /* ── Report ────────────────────────────────────────────── */
+    .report-links { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+    .report-links a {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .6rem 1.2rem; border-radius: 8px; text-decoration: none;
+      font-size: .9rem; font-weight: 500; border: 1px solid var(--border);
+      color: var(--text); background: var(--bg); transition: all .2s;
+    }
+    .report-links a:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Alerts ────────────────────────────────────────────── */
+    .alert {
+      padding: .75rem 1rem; border-radius: 8px; margin-top: 1rem;
+      font-size: .88rem; display: none;
+    }
+    .alert-error { background: rgba(247,129,102,.12); border: 1px solid var(--accent3); color: var(--accent3); }
+    .alert-info  { background: rgba(88,166,255,.1);   border: 1px solid var(--accent); color: var(--accent); }
+
+    /* ── Materials chip list ───────────────────────────────── */
+    .chip-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .chip {
+      background: rgba(88,166,255,.1); border: 1px solid rgba(88,166,255,.3);
+      color: var(--accent); border-radius: 999px; padding: .2rem .8rem;
+      font-size: .78rem;
+    }
+
+    /* ── Cost bar ──────────────────────────────────────────── */
+    .cost-bar-wrap { margin: 1rem 0; }
+    .cost-bar-track { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; height: 22px; position: relative; }
+    .cost-bar-fill  { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .8s ease; }
+    .cost-bar-label { position: absolute; right: 8px; top: 2px; font-size: .78rem; color: var(--text); }
+
+    /* ── Spinner ───────────────────────────────────────────── */
+    .spinner {
+      display: inline-block; width: 16px; height: 16px; margin-left: 8px;
+      border: 2px solid rgba(88,166,255,.3); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin .8s linear infinite; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🏛️</div>
+  <div>
+    <h1>NeoArchAI</h1>
+    <p>Agentic House Architecture Design · LangGraph · CrewAI · FastAPI</p>
+  </div>
+</header>
+
+<div class="container">
+  <div class="grid">
+
+    <!-- ── LEFT: Input Form ──────────────────────────────── -->
+    <div>
+      <div class="card">
+        <h2>🏠 House Requirements</h2>
+
+        <div class="form-group">
+          <label>Architectural Style</label>
+          <select id="style">
+            <option value="modern">Modern</option>
+            <option value="contemporary">Contemporary</option>
+            <option value="traditional">Traditional</option>
+            <option value="mediterranean">Mediterranean</option>
+            <option value="craftsman">Craftsman</option>
+            <option value="colonial">Colonial</option>
+            <option value="ranch">Ranch</option>
+            <option value="victorian">Victorian</option>
+            <option value="minimalist">Minimalist</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Total Area (sq ft)</label>
+            <input type="number" id="area" value="2000" min="500" max="10000" step="100" />
+          </div>
+          <div class="form-group">
+            <label>Number of Floors</label>
+            <select id="floors">
+              <option value="1">1 Floor</option>
+              <option value="2" selected>2 Floors</option>
+              <option value="3">3 Floors</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Bedrooms</label>
+            <select id="bedrooms">
+              <option value="1">1 Bedroom</option>
+              <option value="2">2 Bedrooms</option>
+              <option value="3" selected>3 Bedrooms</option>
+              <option value="4">4 Bedrooms</option>
+              <option value="5">5 Bedrooms</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Bathrooms</label>
+            <select id="bathrooms">
+              <option value="1">1 Bathroom</option>
+              <option value="2" selected>2 Bathrooms</option>
+              <option value="3">3 Bathrooms</option>
+              <option value="4">4 Bathrooms</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Budget Level</label>
+            <select id="budget">
+              <option value="basic">Basic / Economy</option>
+              <option value="standard" selected>Standard / Mid-range</option>
+              <option value="luxury">Luxury / High-end</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Roof Type</label>
+            <select id="roof">
+              <option value="gable" selected>Gable</option>
+              <option value="hip">Hip</option>
+              <option value="flat">Flat</option>
+              <option value="shed">Shed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Climate Zone</label>
+          <select id="climate">
+            <option value="temperate" selected>Temperate</option>
+            <option value="tropical">Tropical</option>
+            <option value="cold">Cold / Nordic</option>
+            <option value="arid">Arid / Desert</option>
+            <option value="mediterranean">Mediterranean</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Additional Features</label>
+          <div class="checkbox-row">
+            <label><input type="checkbox" id="garage" /> Garage</label>
+            <label><input type="checkbox" id="garden" checked /> Garden</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Special Features (optional)</label>
+          <input type="text" id="features" placeholder="e.g. home office, pool, gym, solar panels" />
+        </div>
+
+        <div class="form-group">
+          <label>Custom Notes (optional)</label>
+          <textarea id="notes" placeholder="Any additional preferences or requirements..."></textarea>
+        </div>
+
+        <button class="btn btn-primary" id="generate-btn" onclick="startDesign()">
+          ✨ Generate Architecture Design
+        </button>
+
+        <div class="alert alert-error" id="form-error"></div>
+      </div>
+    </div>
+
+    <!-- ── RIGHT: Progress + Results ───────────────────────── -->
+    <div>
+
+      <!-- Welcome card (shown initially) -->
+      <div class="card" id="welcome-card">
+        <h2>🎯 What NeoArchAI Creates</h2>
+        <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">
+          Fill in your requirements and click Generate to receive a complete architecture package:
+        </p>
+        <div class="summary-grid" style="margin:0">
+          <div class="stat-card">
+            <div class="val">📋</div>
+            <div class="lbl">Basic Design<br>Room schedule, materials &amp; cost estimate</div>
+          </div>
+          <div class="stat-card">
+            <div class="val">📐</div>
+            <div class="lbl">2D Floor Plans<br>Architectural drawings per floor (PNG + SVG)</div>
+          </div>
+          <div class="stat-card">
+            <div class="val">🏗️</div>
+            <div class="lbl">3D Model<br>Interactive Plotly visualization</div>
+          </div>
+          <div class="stat-card">
+            <div class="val">📄</div>
+            <div class="lbl">Full Report<br>HTML + PDF with all details</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress section -->
+      <div class="card" id="progress-section">
+        <h2>⚙️ Generating Design <span id="spinner" class="spinner"></span></h2>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="progress-pct" id="progress-pct">0%</div>
+        <div class="stage-list" id="stage-list">
+          <div class="stage" id="stage-analyzing">
+            <span class="stage-icon">🔍</span>
+            <span class="stage-name">Analyzing Requirements</span>
+            <span class="stage-badge">pending</span>
+          </div>
+          <div class="stage" id="stage-designing">
+            <span class="stage-icon">🏗️</span>
+            <span class="stage-name">Generating Basic Design</span>
+            <span class="stage-badge">pending</span>
+          </div>
+          <div class="stage" id="stage-layout_2d">
+            <span class="stage-icon">📐</span>
+            <span class="stage-name">Rendering 2D Floor Plans</span>
+            <span class="stage-badge">pending</span>
+          </div>
+          <div class="stage" id="stage-model_3d">
+            <span class="stage-icon">🏛️</span>
+            <span class="stage-name">Building 3D Model</span>
+            <span class="stage-badge">pending</span>
+          </div>
+          <div class="stage" id="stage-reporting">
+            <span class="stage-icon">📄</span>
+            <span class="stage-name">Compiling Report</span>
+            <span class="stage-badge">pending</span>
+          </div>
+        </div>
+        <div class="alert alert-error" id="pipeline-error"></div>
+      </div>
+
+      <!-- Results section -->
+      <div class="card" id="results-section">
+        <h2 id="results-title">✅ Design Complete</h2>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="showTab('basic')">📋 Basic Design</button>
+          <button class="tab-btn" onclick="showTab('floorplans')">📐 Floor Plans</button>
+          <button class="tab-btn" onclick="showTab('model3d')">🏛️ 3D Model</button>
+          <button class="tab-btn" onclick="showTab('report')">📄 Report</button>
+        </div>
+
+        <!-- Tab: Basic Design -->
+        <div class="tab-panel active" id="tab-basic">
+          <div class="summary-grid" id="summary-stats"></div>
+          <h3 style="font-size:.88rem;color:var(--muted);margin:.5rem 0 .5rem">Room Schedule</h3>
+          <div style="overflow-x:auto">
+            <table id="room-table">
+              <thead><tr><th>Room</th><th>Floor</th><th>Width (ft)</th><th>Depth (ft)</th><th>Area (sq ft)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <h3 style="font-size:.88rem;color:var(--muted);margin:1rem 0 .5rem">Materials</h3>
+          <div class="chip-list" id="materials-list"></div>
+          <h3 style="font-size:.88rem;color:var(--muted);margin:1rem 0 .5rem">Cost Estimate</h3>
+          <div class="cost-bar-wrap" id="cost-section"></div>
+          <h3 style="font-size:.88rem;color:var(--muted);margin:1rem 0 .5rem">Energy Features</h3>
+          <div class="chip-list" id="energy-list"></div>
+        </div>
+
+        <!-- Tab: Floor Plans -->
+        <div class="tab-panel" id="tab-floorplans">
+          <div class="floor-gallery" id="floor-gallery"></div>
+        </div>
+
+        <!-- Tab: 3D Model -->
+        <div class="tab-panel" id="tab-model3d">
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:.75rem">
+            Interactive 3D model – rotate, zoom, and switch camera presets using the controls inside.
+          </p>
+          <iframe id="model-frame" height="600" frameborder="0" src="about:blank"></iframe>
+          <div style="margin-top:.75rem">
+            <a id="model-dl-link" href="#" target="_blank" style="font-size:.85rem;color:var(--accent)">
+              ⬇️ Open 3D model in new tab
+            </a>
+          </div>
+        </div>
+
+        <!-- Tab: Report -->
+        <div class="tab-panel" id="tab-report">
+          <p style="font-size:.88rem;color:var(--muted)">
+            Your full architecture report is ready. It includes floor plans, material schedules, cost breakdown, and design rationale.
+          </p>
+          <div class="report-links" id="report-links"></div>
+        </div>
+
+      </div><!-- /results -->
+
+    </div><!-- /right col -->
+  </div><!-- /grid -->
+</div><!-- /container -->
+
+<script>
+/* ── State ─────────────────────────────────────────────────── */
+let currentDesignId  = null;
+let eventSource      = null;
+
+const STAGES = ["analyzing","designing","layout_2d","model_3d","reporting"];
+const STATUS_TO_STAGE = {
+  "analyzing":  "analyzing",
+  "designing":  "designing",
+  "layout_2d":  "layout_2d",
+  "model_3d":   "model_3d",
+  "reporting":  "reporting",
+  "complete":   "reporting",
+};
+
+/* ── Helpers ───────────────────────────────────────────────── */
+function show(id)  { document.getElementById(id).style.display = "block"; }
+function hide(id)  { document.getElementById(id).style.display = "none"; }
+function $(id)     { return document.getElementById(id); }
+
+function showAlert(id, msg) {
+  const el = $(id);
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+function showTab(name) {
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  $("tab-" + name).classList.add("active");
+  event.target.classList.add("active");
+}
+
+function updateStages(activeStage, progress) {
+  const activeIdx = STAGES.indexOf(activeStage);
+  STAGES.forEach((s, i) => {
+    const el = $("stage-" + s);
+    if (!el) return;
+    el.className = "stage";
+    const badge = el.querySelector(".stage-badge");
+    if (i < activeIdx) {
+      el.classList.add("done");
+      badge.textContent = "✓ done";
+    } else if (i === activeIdx) {
+      el.classList.add("active");
+      badge.textContent = "running…";
+    } else {
+      badge.textContent = "pending";
+    }
+  });
+
+  $("progress-bar").style.width = progress + "%";
+  $("progress-pct").textContent = progress + "%";
+}
+
+/* ── Start design ─────────────────────────────────────────── */
+async function startDesign() {
+  const btn = $("generate-btn");
+  btn.disabled = true;
+  btn.innerHTML = "⏳ Starting… <span class='spinner'></span>";
+  hide("form-error");
+  hide("results-section");
+  hide("welcome-card");
+
+  const features = $("features").value.trim()
+    .split(",").map(s => s.trim()).filter(Boolean);
+
+  const payload = {
+    requirements: {
+      style:            $("style").value,
+      total_area_sqft:  parseFloat($("area").value) || 2000,
+      floors:           parseInt($("floors").value) || 2,
+      bedrooms:         parseInt($("bedrooms").value) || 3,
+      bathrooms:        parseInt($("bathrooms").value) || 2,
+      has_garage:       $("garage").checked,
+      has_garden:       $("garden").checked,
+      budget_level:     $("budget").value,
+      climate:          $("climate").value,
+      roof_type:        $("roof").value,
+      special_features: features,
+      custom_notes:     $("notes").value.trim() || null,
+    }
+  };
+
+  let resp;
+  try {
+    resp = await fetch("/api/design", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify(payload),
+    });
+  } catch(err) {
+    showAlert("form-error", "Network error: " + err.message);
+    btn.disabled = false;
+    btn.innerHTML = "✨ Generate Architecture Design";
+    show("welcome-card");
+    return;
+  }
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    showAlert("form-error", "Server error " + resp.status + ": " + text);
+    btn.disabled = false;
+    btn.innerHTML = "✨ Generate Architecture Design";
+    show("welcome-card");
+    return;
+  }
+
+  const data = await resp.json();
+  currentDesignId = data.design_id;
+
+  show("progress-section");
+  updateStages("analyzing", 5);
+  openSSE(currentDesignId);
+}
+
+/* ── SSE ────────────────────────────────────────────────────── */
+function openSSE(designId) {
+  if (eventSource) eventSource.close();
+  eventSource = new EventSource("/api/design/" + designId + "/stream");
+
+  eventSource.onmessage = (evt) => {
+    let msg;
+    try { msg = JSON.parse(evt.data); } catch { return; }
+
+    const status   = msg.status   || msg.event || "";
+    const progress = msg.progress || 0;
+    const stage    = STATUS_TO_STAGE[status] || msg.stage || "analyzing";
+
+    updateStages(stage, progress);
+
+    if (status === "complete" || msg.event === "complete") {
+      eventSource.close();
+      onDesignComplete(designId, msg);
+    }
+    if (status === "error") {
+      eventSource.close();
+      onDesignError(msg.error || "Unknown error");
+    }
+  };
+
+  eventSource.onerror = () => {
+    // SSE closed - poll once to get final state
+    eventSource.close();
+    pollFinalState(designId);
+  };
+}
+
+async function pollFinalState(designId) {
+  try {
+    const r = await fetch("/api/design/" + designId);
+    if (!r.ok) return;
+    const data = await r.json();
+    if (data.status === "complete") onDesignComplete(designId, data);
+    else if (data.status === "error") onDesignError(data.error);
+  } catch {}
+}
+
+/* ── On complete ────────────────────────────────────────────── */
+async function onDesignComplete(designId, partialData) {
+  // Fetch full result
+  let design = partialData;
+  try {
+    const r = await fetch("/api/design/" + designId);
+    if (r.ok) design = await r.json();
+  } catch {}
+
+  // Finish progress UI
+  STAGES.forEach(s => {
+    const el = $("stage-" + s);
+    if (!el) return;
+    el.className = "stage done";
+    el.querySelector(".stage-badge").textContent = "✓ done";
+  });
+  $("progress-bar").style.width = "100%";
+  $("progress-pct").textContent = "100%";
+  $("spinner").style.display = "none";
+
+  // Show results
+  renderResults(design);
+  show("results-section");
+
+  const btn = $("generate-btn");
+  btn.disabled = false;
+  btn.innerHTML = "✨ Generate New Design";
+}
+
+function onDesignError(msg) {
+  showAlert("pipeline-error", "❌ " + msg);
+  $("spinner").style.display = "none";
+  const btn = $("generate-btn");
+  btn.disabled = false;
+  btn.innerHTML = "✨ Generate Architecture Design";
+}
+
+/* ── Render results ─────────────────────────────────────────── */
+function renderResults(design) {
+  const bd = design.basic_design || {};
+
+  // ── Summary stats
+  const stats = [
+    { val: bd.style || design.requirements?.style || "–", lbl: "Style" },
+    { val: (bd.total_area_sqft || 0).toLocaleString() + " ft²", lbl: "Total Area" },
+    { val: bd.floors || "–", lbl: "Floors" },
+    { val: (bd.rooms || []).length || "–", lbl: "Rooms" },
+  ];
+  $("summary-stats").innerHTML = stats.map(s =>
+    `<div class="stat-card"><div class="val">${s.val}</div><div class="lbl">${s.lbl}</div></div>`
+  ).join("");
+
+  // ── Room table
+  const rooms = bd.rooms || [];
+  $("room-table").querySelector("tbody").innerHTML = rooms.map(r =>
+    `<tr>
+      <td>${r.name || r.room_type || "–"}</td>
+      <td>${r.floor || 1}</td>
+      <td>${(r.width_ft || 0).toFixed(1)}</td>
+      <td>${(r.depth_ft || 0).toFixed(1)}</td>
+      <td>${((r.width_ft||0)*(r.depth_ft||0)).toFixed(0)}</td>
+    </tr>`
+  ).join("") || "<tr><td colspan='5' style='color:var(--muted)'>No rooms data</td></tr>";
+
+  // ── Materials
+  const mats = bd.materials || {};
+  const matItems = Object.entries(mats).map(([k,v]) => `<span class="chip">${k}: ${v}</span>`);
+  $("materials-list").innerHTML = matItems.join("") || "<span style='color:var(--muted)'>–</span>";
+
+  // ── Cost estimate
+  const cost = bd.cost_estimate || {};
+  if (cost.low_usd && cost.high_usd) {
+    const maxCost = cost.high_usd;
+    const pct = Math.min(100, (cost.high_usd / Math.max(cost.high_usd * 1.2, 1)) * 100);
+    $("cost-section").innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.4rem">
+        <span>Low: <strong style="color:var(--accent2)">$${cost.low_usd.toLocaleString()}</strong></span>
+        <span>High: <strong style="color:var(--accent)">$${cost.high_usd.toLocaleString()}</strong></span>
+      </div>
+      <div class="cost-bar-track">
+        <div class="cost-bar-fill" style="width:${pct}%"></div>
+        <span class="cost-bar-label">$${cost.low_usd.toLocaleString()} – $${cost.high_usd.toLocaleString()}</span>
+      </div>
+      <div style="font-size:.78rem;color:var(--muted);margin-top:.3rem">
+        ${cost.per_sqft_range || ""} · ${cost.note || ""}
+      </div>`;
+  } else {
+    $("cost-section").innerHTML = "<span style='color:var(--muted)'>Cost data unavailable</span>";
+  }
+
+  // ── Energy features
+  const energy = bd.energy_features || [];
+  $("energy-list").innerHTML = energy.map(f => `<span class="chip">🌱 ${f}</span>`).join("")
+    || "<span style='color:var(--muted)'>–</span>";
+
+  // ── Floor plans
+  const fps = design.floor_plans || [];
+  $("floor-gallery").innerHTML = fps.map((fp, i) => `
+    <div class="floor-card">
+      <div class="floor-card-header">
+        <span>Floor ${fp.floor_number || i+1}</span>
+        <div class="floor-card-actions">
+          <a href="${fp.image_url}" target="_blank">PNG</a>
+          <a href="${fp.svg_url}"   target="_blank">SVG</a>
+        </div>
+      </div>
+      <img src="${fp.image_url}" alt="Floor ${fp.floor_number || i+1} plan"
+           onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 200%22><text x=%2250%%22 y=%2250%%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%238b949e%22 font-size=%2214%22>Floor plan loading...</text></svg>'" />
+    </div>`
+  ).join("") || "<p style='color:var(--muted)'>Floor plans are being generated…</p>";
+
+  // ── 3D model
+  const m3d = design.model_3d || {};
+  if (m3d.html_url) {
+    $("model-frame").src = m3d.html_url;
+    $("model-dl-link").href = m3d.html_url;
+  } else {
+    $("model-frame").src = "about:blank";
+    $("model-frame").srcdoc = "<p style='color:#888;font-family:sans-serif;padding:2rem'>3D model not available</p>";
+  }
+
+  // ── Report links
+  const reportUrl = design.report_url || "";
+  const links = [];
+  if (reportUrl) links.push(`<a href="${reportUrl}" target="_blank">📄 View HTML Report</a>`);
+  const pdfUrl = reportUrl.replace("report.html", "report.pdf");
+  if (pdfUrl !== reportUrl) links.push(`<a href="${pdfUrl}" target="_blank">📎 Download PDF</a>`);
+  $("report-links").innerHTML = links.join("") || "<p style='color:var(--muted)'>Report generating…</p>";
+}
+</script>
+</body>
+</html>
